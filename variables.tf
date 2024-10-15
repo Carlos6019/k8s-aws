@@ -1,8 +1,3 @@
-variable "public_key" {
-  description = "keySSH ACCESS"
-  default     = "/root/.ssh/id_rsa.pub"
-}
-
 variable "instance_type" {
   type        = string
   description = "Instance type"

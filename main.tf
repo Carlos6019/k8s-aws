@@ -48,11 +48,18 @@ resource "aws_subnet" "main" {
   }
 }
 
-# Crear clave para conexión SSH
-resource "aws_key_pair" "k8s-ssh" {
-  key_name   = "k8s_access"
-  public_key = file(var.public_key)
+# Crear un par de llaves
+resource "tls_private_key" "k8s_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
 }
+
+# Crear clave para conexión SSH en AWS usando la llave pública generada
+resource "aws_key_pair" "k8s_ssh" {
+  key_name   = "k8s_access"
+  public_key = tls_private_key.k8s_key.public_key_openssh
+}
+
 
 resource "aws_security_group" "k8s_security_group" {
   name = "k8s_security_group"
@@ -88,7 +95,7 @@ resource "aws_security_group" "k8s_security_group" {
 resource "aws_instance" "ec2_control_plain" {
   ami               = var.ami # Ubuntu 20.04 LTS
   instance_type     = var.instance_type
-  key_name          = aws_key_pair.k8s-ssh.key_name
+  key_name          = aws_key_pair.k8s_ssh.key_name
   subnet_id         = aws_subnet.main.id
   #security_groups   = [aws_security_group.k8s_security_group.name] 
   vpc_security_group_ids = [aws_security_group.k8s_security_group.id]
@@ -137,7 +144,7 @@ resource "aws_instance" "ec2_control_plain" {
 resource "aws_instance" "ec2_worker_node" {
   ami               = var.ami # Ubuntu 20.04 LTS
   instance_type     = var.instance_type
-  key_name          = aws_key_pair.k8s-ssh.key_name
+  key_name          = aws_key_pair.k8s_ssh.key_name
   subnet_id         = aws_subnet.main.id
   #security_groups   = [aws_security_group.k8s_security_group.name] 
   vpc_security_group_ids = [aws_security_group.k8s_security_group.id]
